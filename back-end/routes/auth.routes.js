@@ -1,67 +1,60 @@
 const router = require("express").Router();
-
-// ℹ️ Handles password encryption
+//const express = require("express");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
-
-// How many rounds should bcrypt run the salt (default [10 - 12 rounds])
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 const saltRounds = 10;
-
-// Require the User model in order to interact with the database
 const User = require("../models/User.model");
 
-router.get("/verify", isAuthenticaded, (req, res) => {
+router.get("/verify", isAuthenticated, (req, res) => {
   console.log("the token: (or not)",req.payload)
   res.status(200).json(req.payload);
 })
 
 router.post("/signup", (req, res) => {
-  const { email, password } = req.body;
+  const {username, email, contact, city, nif, imgUrl, password} = req.body;
 
-  if (!email) {
+  if (email === '' || password === '' || username === '' || contact === '' || city === '' || nif === '') {
+    res.status(400).json({ message: "Provide email, password and name" });
+    return;
+  }
+  /* if (contact !== 9){
     return res
-      .status(400)
-      .json({ errorMessage: "Please provide your email." });
+    .status(400)
+    .json({ errorMessage: "Please provide your contact." });
+  } */
+  /* if (nif !== 9){
+    return res
+    .status(400)
+    .json({ errorMessage: "Please provide your NIF." });
+  } */
+  if (password.length < 7){
+    return res
+    .status(400)
+    .json({ errorMessage: "Your password needs to be at least 7 characters long." });
   }
 
-  if (password.length < 7) {
-    return res
-      .status(400)
-      .json({ errorMessage: "Your password needs to be at least 7 characters long." });
-  }
 
-  User.findOne({ email }).then((found) => {
-    if (found) {
-      return res
-        .status(400)
-        .json({ errorMessage: "Email already taken." });
-    }
-    return bcrypt
-      .genSalt(saltRounds)
-      .then((salt) => bcrypt.hash(password, salt))
-      .then((hashedPassword) => {
-        return User.create({
-          email,
-          password: hashedPassword,
-        });
-      })
-      .then((user) => {
-        req.session.user = user;
-        res.status(201).json(user);
-      })
-      .catch((error) => {
-        if (error instanceof mongoose.Error.ValidationError) {
-          return res.status(400).json({ errorMessage: error.message });
-        }
-        if (error.code === 11000) {
-          return res.status(400).json({
-            errorMessage:
-              "Email need to be unique. The email you chose is already in use.",
-          });
-        }
-        return res.status(500).json({ errorMessage: error.message });
-      });
-  });
+  User.findOne({ email })
+    .then((foundUser) => {
+      if (foundUser) {
+        res.status(400).json({ message: "User already exists." });
+        return;
+      }
+      const salt = bcrypt.genSaltSync(saltRounds);
+      const hashedPassword = bcrypt.hashSync(password, salt);
+      return User.create({ email, password: hashedPassword, username, contact, city, nif, imgUrl});
+    })
+    .then((createdUser) => {
+      const { email, password: hashedPassword, username, contact, city, nif, imgUrl} = createdUser;
+      const user = { email, password: hashedPassword, username, contact, city, nif, imgUrl};
+      res.status(201).json({ user: user });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: "Internal Server Error" })
+    });
 });
 
 router.post("/login", (req, res, next) => {
@@ -95,29 +88,22 @@ router.post("/login", (req, res, next) => {
         return res.status(200).json({authToken: authToken});
       });
     })
-
     .catch((err) => {
       next(err);
     });
 
-    router.put('/user/:userId', (req, res, next) => {
-      const {userId} = req.params;
-      const {username, email, contact} = req.body;
-
-      User.findByIdAndUpdate(userId, {username, email, contact}, {new: true})
-      .then((user) => res.status(201).json(user))
-      .catch((err) => res.json(err));
-      });
-
-    router.delete('/user/:Id', (req, res, next) => {
-      const {userId} = req.params;
-      User.findByIdAndRemove(userId)
-      .then((user) => res.status(200).json())
-      .catch((err) => res.json(err));
-});
+ 
 
 });
+/*
 
 
+router.delete('/user/:Id', (req, res, next) => {
+  const {userId} = req.params;
+  User.findByIdAndRemove(userId)
+  .then((user) => res.status(200).json())
+  .catch((err) => res.json(err));
+});
+*/
 
 module.exports = router;

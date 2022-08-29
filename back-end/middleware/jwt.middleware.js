@@ -1,24 +1,24 @@
+const { expressjwt: jwt } = require('express-jwt');
 
-const {expressjwt: jwt} = require('express-jwt');
+function getTokenFromHeaders(req) {
+  if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+    const token = req.headers.authorization.split(' ')[1];
+    return token;
+  }
 
-function getTokenFromHeaders(req){
-    if(req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer'){
-        const token = req.headers.authorization.split(' ')[1]
-        return token;
-    }
-    return null;
+  return null;
 
-    // Exaple of the authorization 
-    //{authorization: "Bearer nsof8943nofi9839nfco"}
+  //example of the authorization header with Bearer token
+  //{authorization: "Bearer 098765resdgfchvjbknjop9u8y7t6rytfuio"}
 }
 
-const isAuthenticaded = jwt({
-    secret: process.env.TOKEN_SECRET,
-    algorithms: ['HS256'],
-    requestProperty: 'payload',
-    getToken: getTokenFromHeaders,
-})
+const isAuthenticated = jwt({
+  secret: process.env.TOKEN_SECRET,
+  algorithms: ['HS256'],
+  requestProperty: 'payload',
+  getToken: getTokenFromHeaders,
+});
 
 module.exports = {
-    isAuthenticaded,
+  isAuthenticated,
 };

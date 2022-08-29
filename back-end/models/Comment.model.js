@@ -6,10 +6,10 @@ const commentsSchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "User"
       },
-      content: String,
+      content: { type: String, required: true },
     }
   );
   
-  const Comments = model("Comments", commentsSchema)
+  const Comment = model("Comment", commentsSchema)
 
-module.exports = Comments;
+module.exports = Comment;
