@@ -13,9 +13,10 @@ router.get("/verify", isAuthenticated, (req, res) => {
 })
 
 router.post("/signup", (req, res) => {
-  const {username, email, contact, city, nif, imgUrl, password} = req.body;
+  const {username, email, contact, city, nif, password} = req.body;
+  console.log("____________", email)
 
-  if (email === '' || password === '' || username === '' || contact === '' || city === '' || nif === '') {
+  if (!email || !password || !username || !contact || !city || !nif) {
     res.status(400).json({ message: "Provide email, password and name" });
     return;
   }
@@ -38,17 +39,25 @@ router.post("/signup", (req, res) => {
 
   User.findOne({ email })
     .then((foundUser) => {
+      console.log("___________", foundUser)
       if (foundUser) {
-        res.status(400).json({ message: "User already exists." });
-        return;
+       return res.status(400).json({ message: "User already exists." });
       }
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hashedPassword = bcrypt.hashSync(password, salt);
-      return User.create({ email, password: hashedPassword, username, contact, city, nif, imgUrl});
+
+      return bcrypt
+      .genSalt(saltRounds)
+      .then((salt) => bcrypt.hash(password, salt))
+      .then((hashedPassword) => {
+        // Create a user and save it in the database
+        return User.create({ email, password: hashedPassword, username, contact, city, nif})
+      })
+
+      
     })
     .then((createdUser) => {
-      const { email, password: hashedPassword, username, contact, city, nif, imgUrl} = createdUser;
-      const user = { email, password: hashedPassword, username, contact, city, nif, imgUrl};
+      console.log("____________________________here:" , createdUser)
+      const { email, password: hashedPassword, username, contact, city, nif} = createdUser;
+      const user = { email, password: hashedPassword, username, contact, city, nif};
       res.status(201).json({ user: user });
     })
     .catch(err => {
@@ -59,7 +68,7 @@ router.post("/signup", (req, res) => {
 
 router.post("/login", (req, res, next) => {
   const { email, password } = req.body;
-
+  console.log(req.body);
   if (!email) {
     return res
       .status(400)
@@ -79,8 +88,8 @@ router.post("/login", (req, res, next) => {
         if (!isSamePassword) {
           return res.status(400).json({ errorMessage: "Wrong password." });
         }
-        const {_id, email} = user;  
-        const payload = {_id, email};
+        const {_id, email, password, username, contact, city, nif} = user; 
+        const payload = {_id, email, password, username, contact, city, nif};
         const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
           algorithm: 'HS256', 
           expiresIn: '3d',   
@@ -89,6 +98,7 @@ router.post("/login", (req, res, next) => {
       });
     })
     .catch((err) => {
+      console.log(err)
       next(err);
     });
 

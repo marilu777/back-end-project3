@@ -5,8 +5,12 @@ const voteSchema = new Schema({
     theme: { type: String, required: true },
     img: { type: String },
     description: { type: String, required: true },
-    options: { type: [String], required: true },
-    voteCount: { type: Number },
+    options:[{
+        text:{ type: String, required: true },
+        voteCount: { type: Number },
+    }],
+    
+   
     comments: [{type: Schema.Types.ObjectId, ref:"Comment"}],
     /*selection: {[ type: ]}, */  
 });

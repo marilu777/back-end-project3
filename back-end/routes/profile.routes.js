@@ -9,9 +9,9 @@ const Comment = require("../models/Comment.model");
 
 router.put('/user/:userId', (req, res, next) => {
   const {userId} = req.params;
-  const {username, email, contact} = req.body;
+  const {username, email, contact, imgURL} = req.body;
 
-  User.findByIdAndUpdate(userId, {username, email, contact}, {new: true})
+  User.findByIdAndUpdate(userId, {username, email, contact, imgURL}, {new: true})
   .then((user) => res.status(201).json(user))
   .catch((err) => res.json(err));
   });
